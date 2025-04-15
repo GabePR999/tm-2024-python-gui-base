@@ -2,6 +2,8 @@ import pyglet
 from pyglet.shapes import Rectangle, Circle
 from pyglet.window import key
 from pyglet.text import Label
+from pyglet.sprite import Sprite
+from pyglet.image import loadImage
 
 from random import randint
 
@@ -22,17 +24,20 @@ player_x = window_width / 2
 player_y = 100
 player_speed = 150
 
+player_image = loadImage("./assets/tnka")
+
 # This handles keyboard input
 keys = key.KeyStateHandler()
 window.push_handlers(keys)
 
 player = Circle(player_x, player_y, player_radius, color=WHITE)
-
-
+player_image = loadImage("./assets/tile_0048.png")
+player = Sprite(player_image,x=player_x, y=player_y)
 obstacle_size = 60
 obstacle_speed = 200 
 obstacles = []
 
+obstacle_image = loadImage ("./assets/ tile_289.png")
 def add_obstacle(dt):
     x = randint(int(path_x), int(path_x + path_width - obstacle_size))
     obstacle = Rectangle(x, window_height-obstacle_size,obstacle_size,obstacle_size,RED)
@@ -40,11 +45,13 @@ def add_obstacle(dt):
 
 def check_collision():
     for obstacle in obstacles:
-       if (player.x - player_radius < obstacle.x + obstacle.width and
-        player.x + player_radius > obstacle.x and
-        player.y - player_radius < obstacle.y + obstacle.height
-        player.y + player_radius > obstacle.y):
-            return obstacle
+        if (player.x - player_radius < obstacle.x + obstacle.width and
+            player.x + player_radius > obstacle.x and
+            player.y - player_radius < obstacle.y + obstacle.height and
+            player.y + player_radius > obstacle.y):
+                return obstacle
+    return None
+
 
 path_width = 400
 path_x = (window_width - path_width)/2
@@ -53,11 +60,23 @@ background = Rectangle(0,0,window_width, window_height, GREEN )
 
 path = Rectangle(path_x,0,path_width,window_height,GRAY)
 
+game_over_label = Label(
+    'Game Over'
+    font_size=36,
+    x=window_width / 2,
+    y=window_hight / 2,
+    color=(255,0,0)
+)
+
+game_over = False
+
 points_label = Label(
     'Points: 0',
     font_name='Arial',
     font_size=18,x=10,y=window_height-30
 )
+
+
 health = 100
 health_label = Label(f"Health: {health}",
                     font_name="Arial",
@@ -66,7 +85,7 @@ health_label = Label(f"Health: {health}",
 points = 0 
 def update_points(dt):
     global points
-    health -= 10
+    points += 1
     points_label.text = f'Points: {points}'
 
 def update(dt):
@@ -90,10 +109,20 @@ def update(dt):
 
     obstacle_hit = check_collision()
     if obstacle_hit:
-    print(obstacle_hit)
-
+        global health
+        health -= 10
+        health_label.text = f'Health: {health}'
+        obstacles.remove (obstacle_hit)
+        obstacle_hit.delete()
+        if health <= 0:
+            global game_over 
+            game_over = True
 @window.event
 def on_draw():
+    global game_over
+    if game_over:
+        game_over_label.draw
+
     window.clear()
     player.draw()    
     path.draw()  
